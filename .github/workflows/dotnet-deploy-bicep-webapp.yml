@@ -1,9 +1,6 @@
 on:
   workflow_call:
-    inputs:
-      environment-needed:
-        required: true
-        type: string  
+    inputs: 
       environment:
         required: true
         type: string
@@ -29,7 +26,6 @@ jobs:
     permissions:
       contents: none
     runs-on: ubuntu-latest
-    #needs: build
     environment:
       name: ${{ inputs.environment }}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
