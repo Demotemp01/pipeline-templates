@@ -1,0 +1,60 @@
+on:
+  workflow_call:
+    inputs:
+      environment-needed:
+        required: true
+        type: string  
+      environment:
+        required: true
+        type: string
+      rgname:
+        required: true
+        type: string
+      cliente:
+        required: true
+        type: string
+      randonname:
+        required: true
+        type: string
+      biceppath:
+        required: true
+        type: string        
+      appname:
+        required: true
+        type: string
+
+
+jobs:
+  deploy:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest
+    needs: ${{ inputs.environment-needed }}
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: /home/runner/work/artifact
+          
+      - uses: actions/checkout@v3
+
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_LOGIN }}
+
+      - name: Criar Resources
+        run: |
+          az group create -l brazilsouth -n ${{ inputs.rgname }}
+          az deployment group create --mode Incremental --resource-group ${{ inputs.rgname }} --template-file ${{ inputs.biceppath }} --parameters appName=${{ inputs.appname }} environment=${{ inputs.environment }} appNUm=${{ inputs.cliente }}-${{ inputs.randonname }} 
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: wapp-${{ inputs.appname }}-${{ inputs.environment }}-${{ inputs.cliente }}-${{ inputs.randonname }}
+          package: /home/runner/work/artifact
